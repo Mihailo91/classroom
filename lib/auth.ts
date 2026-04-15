@@ -38,12 +38,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
+      // On initial sign-in, seed the token from the authorize() return value
       if (user) {
         token.id = user.id as string;
         token.role = user.role;
         token.status = user.status;
+        return token;
       }
+
+      // On every subsequent request, refresh role/status from DB so that
+      // admin changes (e.g. INACTIVE) take effect immediately.
+      const fresh = await prisma.user.findUnique({
+        where: { id: token.id as string },
+        select: { role: true, status: true },
+      });
+
+      if (!fresh) return null as unknown as typeof token; // user deleted — invalidate
+
+      token.role = fresh.role;
+      token.status = fresh.status;
       return token;
     },
     session({ session, token }) {

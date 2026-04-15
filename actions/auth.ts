@@ -11,19 +11,27 @@ export async function register(data: {
   email: string;
   password: string;
 }) {
-  const existing = await prisma.user.findUnique({
-    where: { email: data.email },
-  });
-  if (existing) throw new Error("Email already registered");
-
   const passwordHash = await bcrypt.hash(data.password, 12);
-  await prisma.user.create({
-    data: {
-      name: data.name,
-      email: data.email,
-      passwordHash,
-    },
-  });
+  try {
+    await prisma.user.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        passwordHash,
+      },
+    });
+  } catch (error) {
+    // P2002 = unique constraint violation (email already taken)
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002"
+    ) {
+      throw new Error("Email already registered");
+    }
+    throw error;
+  }
 }
 
 export async function loginAction(
