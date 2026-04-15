@@ -1023,7 +1023,7 @@ Vimeo embed URLs returned only if `CourseEnrollment.status = ACTIVE` or `isPrevi
 - Shopping cart (add/remove, coupon, PayPal checkout)
 - Private lesson packages purchasable via cart
 - Lesson booking, cancellation, completion
-- Admin manual bank payment (multi-item)
+- Admin manual bank payment
 - Basic student, teacher, admin dashboards
 - Email notifications
 
