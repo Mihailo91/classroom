@@ -1,0 +1,50 @@
+Phase 1: Core Auth + Base Dashboards
+
+Auth: register, login, logout, role-based redirect (student, professor, admin)
+Basic protected layouts and navigation
+Basic student/professor/admin dashboards (placeholder KPIs + quick links)
+Phase 2: Video + Group Courses Commerce Core
+
+Admin video course/module/lesson management (store Vimeo IDs, preview lesson flag)
+Video course catalog, cart, checkout, ownership, course player access
+Group course creation (admin/professor), listing, cart checkout, enrollment flow
+Phase 3: User & Role Administration
+
+Admin users list, activate/deactivate, assign professor role
+Profile pages (student/professor/admin) with editable basics
+RBAC enforcement across route handlers + middleware
+Phase 4: Payment & Transaction Backbone (PayPal)
+
+create-order/capture-order endpoints
+Unified transactions persistence for package/video/group purchases
+Transaction history page + admin transaction filters
+Phase 5: Lesson Packages & Student Package Lifecycle
+
+Lesson package CRUD (admin) and storefront (student)
+Package purchase fulfillment (student_packages activate/expire/remaining)
+Active package dashboard widget + package status logic
+Phase 6: 1-on-1 Lesson Booking (Non-Recurring Availability for v1)
+
+Professor manual slot publishing (date/time slots, non-recurring)
+Student booking flow with package deduction / paid-lesson marker
+Lesson history views for student/professor/admin + cancel with reason
+Phase 7: Invoicing & Documents
+
+Server-side PDF invoice generation per completed transaction
+Invoice number strategy + secure invoice download endpoint
+Transaction table integration with invoice actions
+Phase 8: Admin/Professor Operational Dashboards
+
+Admin KPIs: total earnings, active students, lessons held, monthly revenue
+Professor KPIs: total earnings, lesson counts, monthly stats
+Lessons-per-professor and core operational reporting endpoints
+Phase 9: Notifications & Reliability
+
+Email notifications: booking, cancellation, purchase, reminders, expiring packages
+Idempotent payment fulfillment + webhook verification hardening
+Audit-friendly logs for payment/order/fulfillment events
+Phase 10: Hardening, QA, and Launch Readiness
+
+Validation (Zod), rate limiting, signed video access URLs, security checks
+E2E tests for critical flows (auth, checkout, booking, player access)
+Performance, accessibility (WCAG), deployment checklist and rollback plan
