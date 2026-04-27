@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 type Lesson = {
   id: string;
   title: string;
+  description: string | null;
   vimeoId: string | null;
   durationMinutes: number | null;
   isPreview: boolean;
@@ -38,10 +39,22 @@ export default function CoursePlayerClient({
   const allLessons = course.modules.flatMap((m) => m.lessons);
   const [activeId, setActiveId] = useState(activeLessonId);
 
+  // Sync activeId with activeLessonId prop when URL changes
+  useEffect(() => {
+    setActiveId(activeLessonId);
+  }, [activeLessonId]);
+
   const activeLesson = allLessons.find((l) => l.id === activeId) ?? allLessons[0];
   const activeIndex = allLessons.findIndex((l) => l.id === activeId);
   const prevLesson = activeIndex > 0 ? allLessons[activeIndex - 1] : null;
   const nextLesson = activeIndex < allLessons.length - 1 ? allLessons[activeIndex + 1] : null;
+
+  // Extract Vimeo ID from URL if needed (supports both "123456" and "https://vimeo.com/123456")
+  const extractVimeoId = (vimeoId: string | null): string | null => {
+    if (!vimeoId) return null;
+    const match = vimeoId.match(/(?:vimeo\.com\/)?(\d+)/);
+    return match ? match[1] : vimeoId;
+  };
 
   const handleSelectLesson = (lesson: Lesson) => {
     if (!lesson.vimeoId) return; // locked lesson
@@ -140,12 +153,12 @@ export default function CoursePlayerClient({
         {/* Main: Video Player */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Video Area */}
-          <div className="flex-1 bg-black flex items-center justify-center">
+          <div className="flex-1 bg-black flex items-center justify-center overflow-hidden">
             {activeLesson.vimeoId ? (
               <div className="w-full h-full">
                 <iframe
                   key={activeLesson.vimeoId}
-                  src={`https://player.vimeo.com/video/${activeLesson.vimeoId}?autoplay=1&title=0&byline=0&portrait=0`}
+                  src={`https://player.vimeo.com/video/${extractVimeoId(activeLesson.vimeoId)}?autoplay=1&title=0&byline=0&portrait=0`}
                   className="w-full h-full"
                   allow="autoplay; fullscreen; picture-in-picture"
                   allowFullScreen
@@ -169,8 +182,8 @@ export default function CoursePlayerClient({
 
           {/* Lesson Info + Navigation */}
           <div className="bg-gray-900 border-t border-gray-700 px-6 py-4 shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
+            <div className="flex items-center justify-between mb-3">
+              <div className="min-w-0 flex-1">
                 <h2 className="text-base font-semibold text-white truncate">
                   {activeLesson.title}
                 </h2>
@@ -201,6 +214,18 @@ export default function CoursePlayerClient({
                 </button>
               </div>
             </div>
+
+            {/* Transcript */}
+            {activeLesson.description && (
+              <div className="mt-4 pt-4 border-t border-gray-700">
+                <h3 className="text-sm font-semibold text-gray-300 mb-2">Transcript</h3>
+                <div className="max-h-32 overflow-y-auto">
+                  <p className="text-sm text-gray-400 whitespace-pre-wrap leading-relaxed">
+                    {activeLesson.description}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </main>
       </div>

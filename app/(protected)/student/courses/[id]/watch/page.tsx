@@ -69,6 +69,7 @@ export default async function CoursePlayerPage({
           lessons: m.lessons.map((l) => ({
             id: l.id,
             title: l.title,
+            description: l.description,
             vimeoId: owned || l.isPreview ? l.vimeoId : null,
             durationMinutes: l.durationMinutes,
             isPreview: l.isPreview,

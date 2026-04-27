@@ -100,7 +100,7 @@ export default async function MyCoursesPage() {
                     </button>
                   ) : (
                     <Link
-                      href={`/courses/${course.id}/watch`}
+                      href={`/student/courses/${course.id}/watch`}
                       className="block w-full text-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
                     >
                       Continue Learning →

@@ -43,7 +43,6 @@ export default async function CourseDetailPage({
     0
   );
 
-  console.log(`[CourseDetail] Preview count: ${previewCount}, Total lessons: ${totalLessons}`);
   const totalDuration = course.modules.reduce(
     (sum, m) =>
       sum +
