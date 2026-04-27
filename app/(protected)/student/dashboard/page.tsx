@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { logoutAction } from "@/actions/auth";
+import Link from "next/link";
 
 export default async function StudentDashboard() {
   const session = await auth();
@@ -30,9 +31,25 @@ export default async function StudentDashboard() {
           <StatCard label="Enrolled Courses" value="—" />
         </div>
 
-        <p className="mt-8 text-sm text-gray-400 text-center">
-          More features coming in the next phases.
-        </p>
+        {/* Quick Links */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Link
+              href="/student/my-courses"
+              className="bg-white rounded-2xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-sm transition-all"
+            >
+              <div className="text-3xl mb-2">📚</div>
+              <h3 className="font-semibold text-gray-900 mb-1">My Courses</h3>
+              <p className="text-sm text-gray-500">Access your purchased video courses</p>
+            </Link>
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 opacity-50">
+              <div className="text-3xl mb-2">📖</div>
+              <h3 className="font-semibold text-gray-900 mb-1">Browse Catalog</h3>
+              <p className="text-sm text-gray-500">Coming in Phase 2</p>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );
