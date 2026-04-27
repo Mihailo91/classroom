@@ -29,11 +29,11 @@ export default auth((req) => {
     if (session.user.status === "INACTIVE") {
       return NextResponse.redirect(new URL("/login?error=inactive", req.url));
     }
-    // Role-path mismatch
+    // Role-path mismatch — skip check for all /api/ routes (they enforce their own auth)
     const expectedPrefix = ROLE_PREFIXES[session.user.role as Role] ?? "/student";
     if (
+      !pathname.startsWith("/api/") &&
       !pathname.startsWith(expectedPrefix) &&
-      !pathname.startsWith("/api/auth") &&
       !pathname.startsWith("/courses")
     ) {
       return NextResponse.redirect(roleDashboard(session.user.role, req.url));

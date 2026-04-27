@@ -70,8 +70,11 @@ export async function getStudentCourses(userId: string) {
 
   return studentCourses.map((sc) => ({
     ...sc.course,
-    purchasedAt: sc.purchasedAt,
-    expiresAt: sc.expiresAt,
+    price: Number(sc.course.price),
+    createdAt: sc.course.createdAt.toISOString(),
+    updatedAt: sc.course.updatedAt.toISOString(),
+    purchasedAt: sc.purchasedAt.toISOString(),
+    expiresAt: sc.expiresAt ? sc.expiresAt.toISOString() : null,
     isExpired: sc.expiresAt ? sc.expiresAt < new Date() : false,
   }));
 }

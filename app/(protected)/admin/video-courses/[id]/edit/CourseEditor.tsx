@@ -170,7 +170,7 @@ function CourseDetailsTab({
             onChange={(e) =>
               setCourseData({ ...courseData, title: e.target.value })
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -185,7 +185,7 @@ function CourseDetailsTab({
               setCourseData({ ...courseData, description: e.target.value })
             }
             rows={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -200,7 +200,7 @@ function CourseDetailsTab({
             onChange={(e) =>
               setCourseData({ ...courseData, coverImageUrl: e.target.value })
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {courseData.coverImageUrl && (
             <img
@@ -224,7 +224,7 @@ function CourseDetailsTab({
             onChange={(e) =>
               setCourseData({ ...courseData, price: e.target.value })
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -503,14 +503,14 @@ function AddModuleForm({ courseId, onClose, onSuccess }: any) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <textarea
           placeholder="Module description (optional)"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={2}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <div className="flex justify-end gap-2">
           <button
@@ -569,14 +569,14 @@ function EditModuleForm({ module, onClose, onSuccess }: any) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <textarea
           placeholder="Module description (optional)"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={2}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <div className="flex justify-end gap-2">
           <button
@@ -643,7 +643,7 @@ function AddLessonForm({ moduleId, onClose, onSuccess }: any) {
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <input
           type="text"
@@ -651,21 +651,21 @@ function AddLessonForm({ moduleId, onClose, onSuccess }: any) {
           value={formData.vimeoId}
           onChange={(e) => setFormData({ ...formData, vimeoId: e.target.value })}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <input
           type="number"
           placeholder="Duration (minutes)"
           value={formData.durationMinutes}
           onChange={(e) => setFormData({ ...formData, durationMinutes: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <textarea
           placeholder="Lesson description (optional)"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           rows={2}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <label className="flex items-center">
           <input
@@ -741,7 +741,7 @@ function EditLessonForm({ lesson, onClose, onSuccess }: any) {
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <input
           type="text"
@@ -749,21 +749,21 @@ function EditLessonForm({ lesson, onClose, onSuccess }: any) {
           value={formData.vimeoId}
           onChange={(e) => setFormData({ ...formData, vimeoId: e.target.value })}
           required
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <input
           type="number"
           placeholder="Duration (minutes)"
           value={formData.durationMinutes}
           onChange={(e) => setFormData({ ...formData, durationMinutes: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <textarea
           placeholder="Lesson description (optional)"
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           rows={2}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-500"
         />
         <label className="flex items-center">
           <input

@@ -70,7 +70,7 @@ export default function CreateCourseForm() {
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., Complete Spanish for Beginners"
           />
         </div>
@@ -91,7 +91,7 @@ export default function CreateCourseForm() {
               setFormData({ ...formData, description: e.target.value })
             }
             rows={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Describe what students will learn in this course..."
           />
         </div>
@@ -111,7 +111,7 @@ export default function CreateCourseForm() {
             onChange={(e) =>
               setFormData({ ...formData, coverImageUrl: e.target.value })
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="https://example.com/image.jpg"
           />
           <p className="text-xs text-gray-500 mt-1">
@@ -137,7 +137,7 @@ export default function CreateCourseForm() {
             onChange={(e) =>
               setFormData({ ...formData, price: e.target.value })
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="49.99"
           />
         </div>

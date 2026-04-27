@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
         { description: { contains: search, mode: "insensitive" } },
       ];
     }
-
+    
     const [courses, total] = await Promise.all([
       prisma.course.findMany({
         where,
