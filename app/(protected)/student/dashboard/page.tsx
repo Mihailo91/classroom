@@ -43,11 +43,14 @@ export default async function StudentDashboard() {
               <h3 className="font-semibold text-gray-900 mb-1">My Courses</h3>
               <p className="text-sm text-gray-500">Access your purchased video courses</p>
             </Link>
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 opacity-50">
+            <Link
+              href="/student/courses"
+              className="bg-white rounded-2xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-sm transition-all"
+            >
               <div className="text-3xl mb-2">📖</div>
               <h3 className="font-semibold text-gray-900 mb-1">Browse Catalog</h3>
-              <p className="text-sm text-gray-500">Coming in Phase 2</p>
-            </div>
+              <p className="text-sm text-gray-500">Explore available video courses</p>
+            </Link>
           </div>
         </div>
       </div>
