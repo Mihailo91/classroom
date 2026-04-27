@@ -19,8 +19,11 @@ model User {
   updatedAt     DateTime        @updatedAt
   
   // Relations
-  createdCourses Course[]       @relation("CourseCreator")
+  createdCourses   Course[]           @relation("CourseCreator")
   purchasedCourses StudentCourse[]
+  teachingGroupCourses GroupCourse[]  @relation("GroupCourseTeacher")
+  teachingGroupLessons GroupLesson[]  @relation("GroupLessonTeacher")
+  groupEnrollments GroupEnrollment[]
 }
 
 enum Role {
@@ -107,4 +110,77 @@ model StudentCourse {
   @@unique([studentId, courseId])
   @@index([studentId])
   @@index([courseId])
+}
+
+// ─── GROUP COURSES ───────────────────────────────────────
+model GroupCourse {
+  id          String            @id @default(cuid())
+  title       String
+  description String?           @db.Text
+  teacherId   String
+  minStudents Int
+  maxStudents Int
+  price       Decimal           @db.Decimal(10, 2)
+  status      GroupCourseStatus @default(UPCOMING)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  // Relations
+  teacher     User              @relation("GroupCourseTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  lessons     GroupLesson[]
+  enrollments GroupEnrollment[]
+  
+  @@index([status])
+  @@index([teacherId])
+}
+
+enum GroupCourseStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model GroupLesson {
+  id              String      @id @default(cuid())
+  courseId        String
+  teacherId       String
+  scheduledAt     DateTime
+  durationMin     Int         @default(50)
+  isHeld          Boolean     @default(false)
+  notes           String?     @db.Text
+  presentStudents String[]    @default([])
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Relations
+  course          GroupCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacher         User        @relation("GroupLessonTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  @@index([courseId])
+  @@index([teacherId])
+  @@index([scheduledAt])
+}
+
+model GroupEnrollment {
+  id         String           @id @default(cuid())
+  studentId  String
+  courseId   String
+  status     EnrollmentStatus @default(ACTIVE)
+  enrolledAt DateTime         @default(now())
+  
+  // Relations
+  student    User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course     GroupCourse      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+  @@index([status])
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
 }
