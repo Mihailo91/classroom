@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { hasAccess } from "@/lib/course-access";
+import { AddToCartButton, CartBadge } from "@/components/CartComponents";
 
 export default async function CourseDetailPage({
   params,
@@ -59,6 +60,9 @@ export default async function CourseDetailPage({
             </Link>
             <span>›</span>
             <span className="text-gray-200">{course.title}</span>
+            <span className="ml-auto">
+              <CartBadge />
+            </span>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -120,6 +124,15 @@ export default async function CourseDetailPage({
                     >
                       Buy Now
                     </Link>
+                    <AddToCartButton
+                      item={{
+                        courseId: course.id,
+                        title: course.title,
+                        price: parseFloat(course.price.toString()),
+                        coverImageUrl: course.coverImageUrl,
+                      }}
+                    />
+                    <div className="mb-3" />
                     {previewCount > 0 && (
                       <Link
                         href={`/student/courses/${course.id}/watch?preview=true`}

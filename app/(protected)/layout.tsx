@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { CartProvider } from "@/lib/cart-context";
 
 export default async function ProtectedLayout({
   children,
@@ -8,5 +9,5 @@ export default async function ProtectedLayout({
 }) {
   const session = await auth();
   if (!session) redirect("/login");
-  return <>{children}</>;
+  return <CartProvider>{children}</CartProvider>;
 }
