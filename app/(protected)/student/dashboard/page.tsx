@@ -69,34 +69,6 @@ export default async function StudentDashboard() {
         />
       </div>
 
-      {/* Quick Actions */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Learning Paths</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <ActionCard
-            href="/student/courses"
-            icon="📚"
-            title="Video Courses"
-            description="Browse on-demand video courses"
-            action="Browse"
-          />
-          <ActionCard
-            href="/student/group-courses"
-            icon="👥"
-            title="Group Courses"
-            description="Join scheduled group classes"
-            action="Explore"
-          />
-          <ActionCard
-            href="/student/private-lessons"
-            icon="🎯"
-            title="Private Lessons"
-            description="Book 1-on-1 sessions"
-            badge="Coming Soon"
-          />
-        </div>
-      </div>
-
       {/* My Learning */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
