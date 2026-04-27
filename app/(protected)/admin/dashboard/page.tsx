@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { logoutAction } from "@/actions/auth";
+import Link from "next/link";
 
 export default async function AdminDashboard() {
   const session = await auth();
@@ -31,9 +32,30 @@ export default async function AdminDashboard() {
           <StatCard label="Revenue This Month" value="—" />
         </div>
 
-        <p className="mt-8 text-sm text-gray-400 text-center">
-          More features coming in the next phases.
-        </p>
+        {/* Quick Links */}
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Link
+              href="/admin/video-courses"
+              className="bg-white rounded-2xl border border-gray-200 p-6 hover:border-blue-300 hover:shadow-sm transition-all"
+            >
+              <div className="text-3xl mb-2">📚</div>
+              <h3 className="font-semibold text-gray-900 mb-1">Video Courses</h3>
+              <p className="text-sm text-gray-500">Manage courses, modules, and lessons</p>
+            </Link>
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 opacity-50">
+              <div className="text-3xl mb-2">👥</div>
+              <h3 className="font-semibold text-gray-900 mb-1">User Management</h3>
+              <p className="text-sm text-gray-500">Coming in Phase 4</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 opacity-50">
+              <div className="text-3xl mb-2">💰</div>
+              <h3 className="font-semibold text-gray-900 mb-1">Finance</h3>
+              <p className="text-sm text-gray-500">Coming in Phase 5</p>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );
