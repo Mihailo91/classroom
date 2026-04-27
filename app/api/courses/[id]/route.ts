@@ -55,8 +55,8 @@ export async function GET(
       description: module.description,
       order: module.order,
       lessons: module.lessons.map((lesson) => {
-        // Show full lesson details for owners or preview lessons
-        if (userOwns || lesson.isPreview) {
+        // Owners see full details including vimeoId
+        if (userOwns) {
           return {
             id: lesson.id,
             title: lesson.title,
@@ -68,7 +68,19 @@ export async function GET(
           };
         }
 
-        // For non-owners, hide Vimeo ID
+        // Preview lessons: visible but vimeoId is fetched on-demand via /api/lessons/[id]/video
+        if (lesson.isPreview) {
+          return {
+            id: lesson.id,
+            title: lesson.title,
+            description: lesson.description,
+            durationMinutes: lesson.durationMinutes,
+            isPreview: lesson.isPreview,
+            order: lesson.order,
+          };
+        }
+
+        // Locked lessons for non-owners
         return {
           id: lesson.id,
           title: lesson.title,

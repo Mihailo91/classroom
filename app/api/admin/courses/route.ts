@@ -88,9 +88,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (isNaN(parseFloat(price)) || parseFloat(price) < 0) {
+    if (isNaN(parseFloat(price)) || !isFinite(parseFloat(price)) || parseFloat(price) < 0 || parseFloat(price) > 99999999.99) {
       return NextResponse.json(
-        { error: "Price must be a positive number" },
+        { error: "Price must be a number between 0 and 99,999,999.99" },
         { status: 400 }
       );
     }
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         coverImageUrl: coverImageUrl || null,
         price: parseFloat(price),
         isPublished: isPublished || false,
-        createdById: user.id!,
+        createdById: user.id,
       },
       include: {
         createdBy: {

@@ -26,6 +26,13 @@ export async function POST(
       );
     }
 
+    if (order !== undefined && (!Number.isInteger(order) || order < 0)) {
+      return NextResponse.json(
+        { error: "order must be a non-negative integer" },
+        { status: 400 }
+      );
+    }
+
     // Verify course exists
     const course = await prisma.course.findUnique({
       where: { id: courseId },
@@ -38,23 +45,25 @@ export async function POST(
       );
     }
 
-    // If no order provided, append to end
+    // If no order provided, append to end (transactional to avoid race conditions)
     let moduleOrder = order;
-    if (moduleOrder === undefined) {
-      const lastModule = await prisma.module.findFirst({
-        where: { courseId },
-        orderBy: { order: "desc" },
-      });
-      moduleOrder = lastModule ? lastModule.order + 1 : 0;
-    }
+    const module = await prisma.$transaction(async (tx) => {
+      if (moduleOrder === undefined) {
+        const lastModule = await tx.module.findFirst({
+          where: { courseId },
+          orderBy: { order: "desc" },
+        });
+        moduleOrder = lastModule ? lastModule.order + 1 : 0;
+      }
 
-    const module = await prisma.module.create({
-      data: {
-        title,
-        description: description || null,
-        order: moduleOrder,
-        courseId,
-      },
+      return tx.module.create({
+        data: {
+          title,
+          description: description || null,
+          order: moduleOrder,
+          courseId,
+        },
+      });
     });
 
     return NextResponse.json({ module }, { status: 201 });

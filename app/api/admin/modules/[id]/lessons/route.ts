@@ -26,6 +26,13 @@ export async function POST(
       );
     }
 
+    if (order !== undefined && (!Number.isInteger(order) || order < 0)) {
+      return NextResponse.json(
+        { error: "order must be a non-negative integer" },
+        { status: 400 }
+      );
+    }
+
     // Verify module exists
     const module = await prisma.module.findUnique({
       where: { id: moduleId },
@@ -38,26 +45,28 @@ export async function POST(
       );
     }
 
-    // If no order provided, append to end
+    // If no order provided, append to end (transactional to avoid race conditions)
     let lessonOrder = order;
-    if (lessonOrder === undefined) {
-      const lastLesson = await prisma.lesson.findFirst({
-        where: { moduleId },
-        orderBy: { order: "desc" },
-      });
-      lessonOrder = lastLesson ? lastLesson.order + 1 : 0;
-    }
+    const lesson = await prisma.$transaction(async (tx) => {
+      if (lessonOrder === undefined) {
+        const lastLesson = await tx.lesson.findFirst({
+          where: { moduleId },
+          orderBy: { order: "desc" },
+        });
+        lessonOrder = lastLesson ? lastLesson.order + 1 : 0;
+      }
 
-    const lesson = await prisma.lesson.create({
-      data: {
-        title,
-        description: description || null,
-        vimeoId,
-        durationMinutes: durationMinutes || null,
-        isPreview: isPreview || false,
-        order: lessonOrder,
-        moduleId,
-      },
+      return tx.lesson.create({
+        data: {
+          title,
+          description: description || null,
+          vimeoId,
+          durationMinutes: durationMinutes || null,
+          isPreview: isPreview || false,
+          order: lessonOrder,
+          moduleId,
+        },
+      });
     });
 
     return NextResponse.json({ lesson }, { status: 201 });
