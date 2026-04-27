@@ -1,6 +1,9 @@
 import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { GroupCourseCartButtons } from "./GroupCourseCartButtons";
+import { CartBadge } from "@/components/CartComponents";
+import { prisma } from "@/lib/prisma";
 
 export default async function GroupCourseDetailPage({
   params,
@@ -12,16 +15,83 @@ export default async function GroupCourseDetailPage({
 
   const { id } = await params;
 
-  // Fetch course details
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/group-courses/${id}`, {
-    cache: "no-store",
+  // Fetch course details directly from database
+  const courseData = await prisma.groupCourse.findUnique({
+    where: {
+      id,
+      status: {
+        in: ["UPCOMING", "ACTIVE"],
+      },
+    },
+    include: {
+      teacher: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      lessons: {
+        where: {
+          scheduledAt: {
+            gte: new Date(),
+          },
+        },
+        select: {
+          id: true,
+          scheduledAt: true,
+          durationMin: true,
+          isHeld: true,
+        },
+        orderBy: {
+          scheduledAt: "asc",
+        },
+      },
+      _count: {
+        select: {
+          enrollments: true,
+        },
+      },
+    },
   });
 
-  if (!response.ok) {
+  if (!courseData) {
     notFound();
   }
 
-  const { course } = await response.json();
+  // Check if user is enrolled
+  const isEnrolled = await prisma.groupEnrollment.findUnique({
+    where: {
+      studentId_courseId: {
+        studentId: session.user.id,
+        courseId: id,
+      },
+      status: "ACTIVE",
+    },
+  });
+
+  // Serialize course data
+  const course = {
+    id: courseData.id,
+    title: courseData.title,
+    description: courseData.description,
+    teacherId: courseData.teacher.id,
+    teacherName: courseData.teacher.name,
+    minStudents: courseData.minStudents,
+    maxStudents: courseData.maxStudents,
+    price: Number(courseData.price),
+    status: courseData.status,
+    enrolledCount: courseData._count.enrollments,
+    availableSpots: courseData.maxStudents - courseData._count.enrollments,
+    isFull: courseData._count.enrollments >= courseData.maxStudents,
+    isEnrolled: !!isEnrolled,
+    lessons: courseData.lessons.map((lesson) => ({
+      id: lesson.id,
+      scheduledAt: lesson.scheduledAt,
+      durationMin: lesson.durationMin,
+      isHeld: lesson.isHeld,
+    })),
+    createdAt: courseData.createdAt,
+  };
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
@@ -59,6 +129,9 @@ export default async function GroupCourseDetailPage({
                 </p>
               )}
             </div>
+            <div className="ml-4">
+              <CartBadge />
+            </div>
           </div>
 
           {/* Course Info */}
@@ -87,28 +160,18 @@ export default async function GroupCourseDetailPage({
 
           {/* Enrollment CTA */}
           {!course.isEnrolled && (
-            <div className="flex items-center gap-3">
-              {course.isFull ? (
-                <div className="flex-1 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  This course is full. No spots available.
-                </div>
-              ) : (
-                <>
-                  <button
-                    disabled
-                    className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Add to Cart
-                  </button>
-                  <button
-                    disabled
-                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Enroll Now
-                  </button>
-                </>
-              )}
-            </div>
+            <GroupCourseCartButtons
+              course={{
+                id: course.id,
+                title: course.title,
+                price: course.price,
+                teacherName: course.teacherName,
+                minStudents: course.minStudents,
+                maxStudents: course.maxStudents,
+                isFull: course.isFull,
+                isEnrolled: course.isEnrolled,
+              }}
+            />
           )}
         </div>
 

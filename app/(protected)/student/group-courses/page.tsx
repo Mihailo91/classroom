@@ -1,17 +1,69 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 
 export default async function StudentGroupCoursesPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  // Fetch courses from API
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/group-courses`, {
-    cache: "no-store",
+  // Fetch courses directly from database
+  const coursesData = await prisma.groupCourse.findMany({
+    where: {
+      status: {
+        in: ["UPCOMING", "ACTIVE"],
+      },
+    },
+    include: {
+      teacher: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      _count: {
+        select: {
+          enrollments: true,
+          lessons: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
-  const { courses } = await response.json();
+  // Check enrollment status for current user
+  const enrolledCourseIds = (
+    await prisma.groupEnrollment.findMany({
+      where: {
+        studentId: session.user.id,
+        status: "ACTIVE",
+      },
+      select: {
+        courseId: true,
+      },
+    })
+  ).map((e) => e.courseId);
+
+  // Calculate available spots and serialize
+  const courses = coursesData.map((course) => ({
+    id: course.id,
+    title: course.title,
+    description: course.description,
+    teacherId: course.teacher.id,
+    teacherName: course.teacher.name,
+    minStudents: course.minStudents,
+    maxStudents: course.maxStudents,
+    price: Number(course.price),
+    status: course.status,
+    enrolledCount: course._count.enrollments,
+    lessonsCount: course._count.lessons,
+    availableSpots: course.maxStudents - course._count.enrollments,
+    isFull: course._count.enrollments >= course.maxStudents,
+    isEnrolled: enrolledCourseIds.includes(course.id),
+    createdAt: course.createdAt,
+  }));
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">

@@ -127,7 +127,8 @@ export default async function CourseDetailPage({
                     </Link>
                     <AddToCartButton
                       item={{
-                        courseId: course.id,
+                        id: course.id,
+                        type: "video",
                         title: course.title,
                         price: parseFloat(course.price.toString()),
                         coverImageUrl: course.coverImageUrl,

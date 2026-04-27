@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export function AddToCartButton({ item }: { item: CartItem }) {
   const { addItem, hasItem } = useCart();
-  const inCart = hasItem(item.courseId);
+  const inCart = hasItem(item.id);
 
   if (inCart) {
     return (

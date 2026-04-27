@@ -9,11 +9,18 @@ import {
   ReactNode,
 } from "react";
 
+export type CartItemType = "video" | "group";
+
 export type CartItem = {
-  courseId: string;
+  id: string; // courseId for both types
+  type: CartItemType;
   title: string;
   price: number;
-  coverImageUrl: string | null;
+  coverImageUrl?: string | null;
+  // Group course specific fields
+  teacherName?: string;
+  minStudents?: number;
+  maxStudents?: number;
 };
 
 type CartContextType = {
@@ -21,8 +28,8 @@ type CartContextType = {
   count: number;
   total: number;
   addItem: (item: CartItem) => void;
-  removeItem: (courseId: string) => void;
-  hasItem: (courseId: string) => boolean;
+  removeItem: (id: string) => void;
+  hasItem: (id: string) => boolean;
   clearCart: () => void;
 };
 
@@ -47,16 +54,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((item: CartItem) => {
     setItems((prev) =>
-      prev.find((i) => i.courseId === item.courseId) ? prev : [...prev, item]
+      prev.find((i) => i.id === item.id) ? prev : [...prev, item]
     );
   }, []);
 
-  const removeItem = useCallback((courseId: string) => {
-    setItems((prev) => prev.filter((i) => i.courseId !== courseId));
+  const removeItem = useCallback((id: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
   }, []);
 
   const hasItem = useCallback(
-    (courseId: string) => items.some((i) => i.courseId === courseId),
+    (id: string) => items.some((i) => i.id === id),
     [items]
   );
 
