@@ -8,15 +8,19 @@ datasource db {
 
 // ─── USERS ───────────────────────────────────────────────
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  passwordHash String
-  name         String
-  avatarUrl    String?
-  role         Role       @default(STUDENT)
-  status       UserStatus @default(ACTIVE)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id            String          @id @default(cuid())
+  email         String          @unique
+  passwordHash  String
+  name          String
+  avatarUrl     String?
+  role          Role            @default(STUDENT)
+  status        UserStatus      @default(ACTIVE)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  // Relations
+  createdCourses Course[]       @relation("CourseCreator")
+  purchasedCourses StudentCourse[]
 }
 
 enum Role {
@@ -29,4 +33,78 @@ enum UserStatus {
   ACTIVE
   IDLE
   INACTIVE
+}
+
+// ─── VIDEO COURSES ───────────────────────────────────────
+model Course {
+  id             String          @id @default(cuid())
+  title          String
+  description    String          @db.Text
+  coverImageUrl  String?
+  price          Decimal         @db.Decimal(10, 2)
+  isPublished    Boolean         @default(false)
+  createdById    String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  
+  // Relations
+  createdBy      User            @relation("CourseCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  modules        Module[]
+  studentCourses StudentCourse[]
+  
+  @@index([isPublished])
+  @@index([createdById])
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  order       Int
+  courseId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+  
+  @@index([courseId])
+  @@index([courseId, order])
+}
+
+model Lesson {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?  @db.Text
+  vimeoId         String
+  durationMinutes Int?
+  isPreview       Boolean  @default(false)
+  order           Int
+  moduleId        String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  module          Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  @@index([moduleId])
+  @@index([moduleId, order])
+  @@index([isPreview])
+}
+
+model StudentCourse {
+  id          String    @id @default(cuid())
+  studentId   String
+  courseId    String
+  purchasedAt DateTime  @default(now())
+  expiresAt   DateTime? // null = lifetime access
+  
+  // Relations
+  student     User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
 }

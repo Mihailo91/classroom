@@ -1,10 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
-import { loginAction } from "@/actions/auth";
+import { useActionState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { loginAction } from "@/actions/auth";
 
 function LoginForm() {
   const [error, formAction, pending] = useActionState(loginAction, null);
