@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/api-helpers";
+import { requireTeacherOrAdmin } from "@/lib/api-helpers";
 
 /**
  * POST /api/admin/group-courses/[id]/lessons
- * Add a lesson to a group course
+ * Add a lesson to a group course (Admin or assigned Teacher)
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin();
+    const { user, error } = await requireTeacherOrAdmin();
+    if (error) return error;
 
     const { id: courseId } = await params;
     const body = await request.json();
@@ -35,6 +36,14 @@ export async function POST(
       return NextResponse.json(
         { error: "Group course not found" },
         { status: 404 }
+      );
+    }
+
+    // Teachers can only schedule lessons for their own courses
+    if (user.role === "TEACHER" && course.teacherId !== user.id) {
+      return NextResponse.json(
+        { error: "You can only schedule lessons for your own courses" },
+        { status: 403 }
       );
     }
 

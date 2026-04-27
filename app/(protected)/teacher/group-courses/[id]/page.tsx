@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { ScheduleLessonForm } from "./ScheduleLessonForm";
+import { DeleteLessonButton } from "./DeleteLessonButton";
 
 export default async function TeacherGroupCourseDetailPage({
   params,
@@ -156,14 +158,19 @@ export default async function TeacherGroupCourseDetailPage({
 
           {/* Upcoming Lessons */}
           <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              Upcoming Lessons ({upcomingLessons.length})
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">
+                Upcoming Lessons ({upcomingLessons.length})
+              </h2>
+            </div>
+            
+            {/* Schedule Lesson Form */}
+            <ScheduleLessonForm courseId={course.id} teacherId={session.user.id} />
             
             {upcomingLessons.length === 0 ? (
-              <p className="text-gray-500 text-sm">No upcoming lessons scheduled.</p>
+              <p className="text-gray-500 text-sm mt-4">No upcoming lessons scheduled.</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-3 mt-4">
                 {upcomingLessons.map((lesson, index) => (
                   <div
                     key={lesson.id}
@@ -173,11 +180,14 @@ export default async function TeacherGroupCourseDetailPage({
                       <div className="font-medium text-gray-900">
                         Lesson {index + 1}
                       </div>
-                      {lesson.isHeld && (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                          Held
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {lesson.isHeld && (
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            Held
+                          </span>
+                        )}
+                        <DeleteLessonButton lessonId={lesson.id} />
+                      </div>
                     </div>
                     <div className="text-sm text-gray-600">
                       {new Date(lesson.scheduledAt).toLocaleDateString("en-US", {
@@ -192,6 +202,11 @@ export default async function TeacherGroupCourseDetailPage({
                     <div className="text-xs text-gray-500 mt-1">
                       Duration: {lesson.durationMin} minutes
                     </div>
+                    {lesson.notes && (
+                      <div className="text-xs text-gray-600 mt-2 italic">
+                        {lesson.notes}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
