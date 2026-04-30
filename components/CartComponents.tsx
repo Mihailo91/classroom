@@ -2,6 +2,26 @@
 
 import { useCart, CartItem } from "@/lib/cart-context";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+export function BuyNowButton({ item }: { item: CartItem }) {
+  const { addItem } = useCart();
+  const router = useRouter();
+
+  const handleBuyNow = () => {
+    addItem(item);
+    router.push("/student/checkout");
+  };
+
+  return (
+    <button
+      onClick={handleBuyNow}
+      className="block w-full text-center bg-blue-600 text-white font-semibold rounded-xl py-3 hover:bg-blue-700 transition-colors"
+    >
+      Buy Now
+    </button>
+  );
+}
 
 export function AddToCartButton({ item }: { item: CartItem }) {
   const { addItem, hasItem } = useCart();

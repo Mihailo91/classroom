@@ -2,6 +2,7 @@
 
 import { useCart, CartItem } from "@/lib/cart-context";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type GroupCourseCartButtonsProps = {
   course: {
@@ -19,6 +20,7 @@ type GroupCourseCartButtonsProps = {
 export function GroupCourseCartButtons({ course }: GroupCourseCartButtonsProps) {
   const { addItem, hasItem } = useCart();
   const inCart = hasItem(course.id);
+  const router = useRouter();
 
   if (course.isFull) {
     return (
@@ -55,12 +57,12 @@ export function GroupCourseCartButtons({ course }: GroupCourseCartButtonsProps) 
           Add to Cart
         </button>
       )}
-      <Link
-        href={`/student/group-courses/${course.id}/checkout`}
+      <button
+        onClick={() => { addItem(cartItem); router.push("/student/checkout"); }}
         className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
       >
         Enroll Now
-      </Link>
+      </button>
     </div>
   );
 }

@@ -1,5 +1,6 @@
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 const ROLE_PREFIXES = {
   STUDENT: "/student",
@@ -10,38 +11,45 @@ const ROLE_PREFIXES = {
 type Role = keyof typeof ROLE_PREFIXES;
 
 function roleDashboard(role: string, base: string) {
-  const prefix = ROLE_PREFIXES[(role as Role)] ?? "/student";
+  const prefix = ROLE_PREFIXES[role as Role] ?? "/student";
   return new URL(`${prefix}/dashboard`, base);
 }
 
-export default auth((req) => {
-  const { pathname } = req.nextUrl;
-  const session = req.auth;
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  const token = await getToken({
+    req: request as any,
+    secret: process.env.AUTH_SECRET,
+  });
 
   const isAuthPage = pathname === "/login" || pathname === "/register";
 
-  // Authenticated users: redirect away from "/" and auth pages
-  if (session) {
+  if (token) {
+    const role = token.role as string;
+    const status = token.status as string;
+
     if (pathname === "/" || isAuthPage) {
-      return NextResponse.redirect(roleDashboard(session.user.role, req.url));
+      return NextResponse.redirect(roleDashboard(role, request.url));
     }
-    // INACTIVE — force back to login
-    if (session.user.status === "INACTIVE") {
-      return NextResponse.redirect(new URL("/login?error=inactive", req.url));
+
+    if (status === "INACTIVE") {
+      return NextResponse.redirect(new URL("/login?error=inactive", request.url));
     }
-    // Role-path mismatch — skip check for all /api/ routes (they enforce their own auth)
-    const expectedPrefix = ROLE_PREFIXES[session.user.role as Role] ?? "/student";
+
+    const expectedPrefix = ROLE_PREFIXES[role as Role] ?? "/student";
     if (
       !pathname.startsWith("/api/") &&
       !pathname.startsWith(expectedPrefix) &&
       !pathname.startsWith("/courses")
     ) {
-      return NextResponse.redirect(roleDashboard(session.user.role, req.url));
+      return NextResponse.redirect(roleDashboard(role, request.url));
     }
+
     return NextResponse.next();
   }
 
-  // Unauthenticated: allow public paths
+  // Unauthenticated
   const isPublic =
     pathname === "/" ||
     isAuthPage ||
@@ -50,9 +58,10 @@ export default auth((req) => {
 
   if (isPublic) return NextResponse.next();
 
-  return NextResponse.redirect(new URL("/login", req.url));
-});
+  return NextResponse.redirect(new URL("/login", request.url));
+}
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };
+

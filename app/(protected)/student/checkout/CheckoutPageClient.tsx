@@ -2,14 +2,87 @@
 
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-export default function CheckoutPageClient({ userId }: { userId: string }) {
+export default function CheckoutPageClient({
+  userId,
+  paypalClientId,
+}: {
+  userId: string;
+  paypalClientId: string;
+}) {
   const { items, total, clearCart } = useCart();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [sdkReady, setSdkReady] = useState(false);
+  const paypalContainerRef = useRef<HTMLDivElement>(null);
+  const buttonsRendered = useRef(false);
+
+  // Load PayPal SDK script
+  useEffect(() => {
+    if (items.length === 0) return;
+    if (document.getElementById("paypal-sdk")) {
+      setSdkReady(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "paypal-sdk";
+    script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}&currency=EUR`;
+    script.async = true;
+    script.onload = () => setSdkReady(true);
+    document.body.appendChild(script);
+  }, [paypalClientId, items.length]);
+
+  // Render PayPal buttons once SDK is ready
+  useEffect(() => {
+    if (!sdkReady || !paypalContainerRef.current || buttonsRendered.current) return;
+    if (items.length === 0) return;
+
+    const win = window as any;
+    if (!win.paypal) return;
+
+    buttonsRendered.current = true;
+
+    win.paypal
+      .Buttons({
+        createOrder: async () => {
+          const res = await fetch("/api/cart/create-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items }),
+          });
+          if (!res.ok) throw new Error("Failed to create order");
+          const data = await res.json();
+          return data.paypalOrderId;
+        },
+        onApprove: async (data: any) => {
+          setLoading(true);
+          setError("");
+          try {
+            const res = await fetch("/api/cart/capture", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ paypalOrderId: data.orderID }),
+            });
+            if (!res.ok) throw new Error("Payment capture failed");
+            const result = await res.json();
+            clearCart();
+            router.push(`/student/checkout/success?txn=${result.transactionId}`);
+          } catch (err: any) {
+            setError(err.message || "Payment failed. Please try again.");
+            setLoading(false);
+          }
+        },
+        onError: (err: any) => {
+          console.error("PayPal error:", err);
+          setError("Payment failed. Please try again.");
+        },
+        style: { layout: "vertical" },
+      })
+      .render(paypalContainerRef.current);
+  }, [sdkReady, items, clearCart, router]);
 
   if (items.length === 0) {
     return (
@@ -17,43 +90,13 @@ export default function CheckoutPageClient({ userId }: { userId: string }) {
         <div className="text-center">
           <div className="text-5xl mb-4">🛒</div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
-          <Link
-            href="/student/courses"
-            className="text-blue-600 text-sm hover:underline"
-          >
+          <Link href="/student/courses" className="text-blue-600 text-sm hover:underline">
             Browse courses →
           </Link>
         </div>
       </main>
     );
   }
-
-  // Test purchase handler — will be replaced with PayPal in Phase 5
-  const handleTestPurchase = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      await Promise.all(
-        items.map((item) =>
-          fetch("/api/test/purchase-course", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ courseId: item.courseId }),
-          }).then((r) => {
-            if (!r.ok) throw new Error(`Failed to purchase ${item.title}`);
-          })
-        )
-      );
-
-      clearCart();
-      router.push("/student/my-courses?purchased=true");
-    } catch (err: any) {
-      setError(err.message || "Purchase failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
@@ -82,7 +125,7 @@ export default function CheckoutPageClient({ userId }: { userId: string }) {
           <h2 className="font-semibold text-gray-900 mb-4">Order Summary</h2>
           <div className="space-y-3 divide-y divide-gray-100">
             {items.map((item) => (
-              <div key={item.courseId} className="flex justify-between pt-3 first:pt-0">
+              <div key={item.id} className="flex justify-between pt-3 first:pt-0">
                 <span className="text-sm text-gray-700">{item.title}</span>
                 <span className="text-sm font-medium text-gray-900">
                   €{item.price.toFixed(2)}
@@ -96,27 +139,27 @@ export default function CheckoutPageClient({ userId }: { userId: string }) {
           </div>
         </div>
 
-        {/* Payment — placeholder for Phase 5 PayPal integration */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-4">
-          <h2 className="font-semibold text-gray-900 mb-2">Payment</h2>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-            💳 PayPal integration coming in Phase 5.
-            Use the test button below to simulate a purchase during development.
-          </div>
+        {/* Payment */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <h2 className="font-semibold text-gray-900 mb-4">Payment</h2>
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+              <p className="text-sm text-gray-600 mt-2">Processing payment...</p>
+            </div>
+          ) : (
+            <div ref={paypalContainerRef} className="min-h-[150px]">
+              {!sdkReady && (
+                <div className="flex items-center justify-center py-8 text-sm text-gray-400">
+                  Loading payment options...
+                </div>
+              )}
+            </div>
+          )}
         </div>
-
-        {/* CTA */}
-        <button
-          onClick={handleTestPurchase}
-          disabled={loading}
-          className="w-full bg-blue-600 text-white font-semibold rounded-xl py-4 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg"
-        >
-          {loading ? "Processing..." : `Complete Purchase — €${total.toFixed(2)}`}
-        </button>
-        <p className="text-xs text-gray-400 text-center mt-3">
-          🔒 Test mode — no real payment processed
-        </p>
       </div>
     </main>
   );
 }
+
+

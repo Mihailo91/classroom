@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { hasAccess } from "@/lib/course-access";
-import { AddToCartButton, CartBadge } from "@/components/CartComponents";
+import { AddToCartButton, CartBadge, BuyNowButton } from "@/components/CartComponents";
 
 export default async function CourseDetailPage({
   params,
@@ -119,12 +119,16 @@ export default async function CourseDetailPage({
                   <>
                     <div className="text-3xl font-bold mb-1">€{course.price.toString()}</div>
                     <p className="text-sm text-gray-500 mb-4">Lifetime access</p>
-                    <Link
-                      href={`/student/courses/${course.id}/checkout`}
-                      className="block w-full text-center bg-blue-600 text-white font-semibold rounded-xl py-3 hover:bg-blue-700 transition-colors mb-3"
-                    >
-                      Buy Now
-                    </Link>
+                    <BuyNowButton
+                      item={{
+                        id: course.id,
+                        type: "video",
+                        title: course.title,
+                        price: parseFloat(course.price.toString()),
+                        coverImageUrl: course.coverImageUrl,
+                      }}
+                    />
+                    <div className="mb-3" />
                     <AddToCartButton
                       item={{
                         id: course.id,
