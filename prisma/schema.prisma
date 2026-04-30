@@ -24,6 +24,8 @@ model User {
   teachingGroupCourses GroupCourse[]  @relation("GroupCourseTeacher")
   teachingGroupLessons GroupLesson[]  @relation("GroupLessonTeacher")
   groupEnrollments GroupEnrollment[]
+  cart             Cart?
+  transactions     Transaction[]
 }
 
 enum Role {
@@ -169,6 +171,14 @@ model GroupEnrollment {
   status     EnrollmentStatus @default(ACTIVE)
   enrolledAt DateTime         @default(now())
   
+  // Payment tracking (for manual bank transfers)
+  paymentMethod      String?  // "bank_transfer", "paypal", etc.
+  transactionRef     String?  // Bank transaction reference/ID
+  paymentDate        DateTime?
+  amountPaid         Decimal? @db.Decimal(10, 2)
+  payerName          String?  // Name of person who made the payment
+  paymentNotes       String?  @db.Text
+  
   // Relations
   student    User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
   course     GroupCourse      @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -183,4 +193,103 @@ enum EnrollmentStatus {
   ACTIVE
   COMPLETED
   CANCELLED
+}
+
+// ─── CART ─────────────────────────────────────────────────
+model Cart {
+  id         String     @id @default(cuid())
+  userId     String     @unique
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  couponCode String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  items      CartItem[]
+  
+  @@index([userId])
+}
+
+model CartItem {
+  id            String       @id @default(cuid())
+  cartId        String
+  cart          Cart         @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  itemType      CartItemType
+  teacherId     String?      // For LESSON_PACKAGE
+  packageType   PackageType? // For LESSON_PACKAGE
+  groupCourseId String?      // For GROUP_COURSE
+  courseId      String?      // For VIDEO_COURSE
+  priceSnapshot Decimal      @db.Decimal(10,2)
+  createdAt     DateTime     @default(now())
+  
+  @@index([cartId])
+}
+
+enum CartItemType {
+  LESSON_PACKAGE
+  GROUP_COURSE
+  VIDEO_COURSE
+}
+
+enum PackageType {
+  SINGLE
+  STARTER    // 4 lessons
+  STANDARD   // 8 lessons
+  PREMIUM    // 12 lessons
+}
+
+// ─── TRANSACTIONS ─────────────────────────────────────────
+model Transaction {
+  id             String            @id @default(cuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paypalOrderId  String?           @unique
+  grossAmount    Decimal           @db.Decimal(10,2)  // Total before discount
+  discountAmount Decimal           @db.Decimal(10,2) @default(0)
+  netAmount      Decimal           @db.Decimal(10,2)  // Final amount paid
+  couponCode     String?
+  status         TransactionStatus @default(PENDING)
+  createdAt      DateTime          @default(now())
+  completedAt    DateTime?
+  
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIAL_REFUND
+}
+
+// ─── COUPONS ──────────────────────────────────────────────
+model Coupon {
+  id             String         @id @default(cuid())
+  code           String         @unique
+  discountType   DiscountType
+  discountValue  Decimal        @db.Decimal(10,2)  // Percentage (0-100) or Fixed amount
+  applicableTo   CouponTarget[]
+  validFrom      DateTime
+  validUntil     DateTime
+  maxUses        Int?           // Total usage limit across all users
+  usedCount      Int            @default(0)
+  maxUsesPerUser Int?           // Per-user limit
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  
+  @@index([code])
+  @@index([isActive, validFrom, validUntil])
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum CouponTarget {
+  LESSON_PACKAGE
+  VIDEO_COURSE
+  GROUP_COURSE
 }

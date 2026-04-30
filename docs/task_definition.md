@@ -139,12 +139,17 @@ Here he can reasign student to different teacher or schedule a class for specifi
 - Unused lessons expire at the end of the validity period (no automatic refund).
 - Admin can manually extend a package's expiry date.
 
-### 7.4 Per-teacher Pricing
-- Admin can set teacher price per lesson type (single class, 4-pack, 8-pack, 12-pack).
-- Since teacher works in the school he earns fixed amount per `lesson price_per_teacher` (it is not exactly the same for all students)
-- Prices are stored in `teacher_pricing` column and displayed to students during the purchase flow.
-- When a student selects a teacher, the prices shown are that teacher's specific rates.
-- ssudets with coupen can have discounts 
+### 7.4 Per-teacher Pricing & Revenue Split
+- The platform uses a **revenue-sharing model** where each lesson payment is split between the school and the teacher.
+- Admin configures two values per teacher per package type:
+  - **School Revenue** (`priceForSchool`) - Amount retained by the school
+  - **Teacher Earnings** (`priceForTeacher`) - Amount paid to the teacher
+- **Example:** Student pays €30 for a lesson → School gets €17, Teacher gets €13
+- Pricing is stored per teacher per package type (single class, 4-pack, 8-pack, 12-pack)
+- Different teachers can have different revenue splits based on agreements
+- **Teacher earnings reports** calculate salary using only `priceForTeacher × completed lessons`
+- **Student checkout** displays the total price (school + teacher portions combined)
+- Students with coupons receive discounts on the total price 
 
 ### 7.5 Coupons & Promotional Discounts
 - The platform supports **coupons** as a promotional discount mechanism.

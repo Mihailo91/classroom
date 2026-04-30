@@ -24,6 +24,12 @@ type Enrollment = {
   id: string;
   status: string;
   enrolledAt: Date;
+  paymentMethod?: string | null;
+  transactionRef?: string | null;
+  paymentDate?: Date | null;
+  amountPaid?: number | null;
+  payerName?: string | null;
+  paymentNotes?: string | null;
   student: {
     id: string;
     name: string;
@@ -45,12 +51,20 @@ type Course = {
   enrollments: Enrollment[];
 };
 
+type Student = {
+  id: string;
+  name: string;
+  email: string;
+};
+
 export default function GroupCourseEditor({
   course,
   teachers,
+  students,
 }: {
   course: Course;
   teachers: Teacher[];
+  students: Student[];
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"details" | "lessons" | "enrollments">("details");
@@ -76,6 +90,22 @@ export default function GroupCourseEditor({
     durationMin: 50,
     notes: "",
   });
+
+  // Enrollment form
+  const [showAddEnrollment, setShowAddEnrollment] = useState(false);
+  const [enrollmentData, setEnrollmentData] = useState({
+    studentId: "",
+    paymentMethod: "bank_transfer",
+    transactionRef: "",
+    paymentDate: "",
+    amountPaid: course.price.toString(),
+    payerName: "",
+    paymentNotes: "",
+  });
+
+  const availableStudents = students.filter(
+    (student) => !course.enrollments.some((e) => e.student.id === student.id)
+  );
 
   const handleSaveCourseDetails = async () => {
     setError("");
@@ -152,6 +182,53 @@ export default function GroupCourseEditor({
       router.refresh();
     } catch (err: any) {
       setError(err instanceof Error ? err.message : "Failed to delete lesson");
+    }
+  };
+
+  const handleAddEnrollment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!enrollmentData.studentId) {
+      setError("Please select a student");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/group-courses/${course.id}/enroll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: enrollmentData.studentId,
+          paymentMethod: enrollmentData.paymentMethod,
+          transactionRef: enrollmentData.transactionRef || null,
+          paymentDate: enrollmentData.paymentDate || null,
+          amountPaid: enrollmentData.amountPaid || null,
+          payerName: enrollmentData.payerName || null,
+          paymentNotes: enrollmentData.paymentNotes || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to enroll student");
+      }
+
+      setSuccess("Student enrolled successfully!");
+      setTimeout(() => setSuccess(""), 3000);
+      setShowAddEnrollment(false);
+      setEnrollmentData({
+        studentId: "",
+        paymentMethod: "bank_transfer",
+        transactionRef: "",
+        paymentDate: "",
+        amountPaid: course.price.toString(),
+        payerName: "",
+        paymentNotes: "",
+      });
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
@@ -510,51 +587,212 @@ export default function GroupCourseEditor({
       )}
 
       {activeTab === "enrollments" && (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          {course.enrollments.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-sm">No enrollments yet.</p>
-            </div>
-          ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Student
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Enrolled At
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {course.enrollments.map((enrollment) => (
-                  <tr key={enrollment.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {enrollment.student.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {enrollment.student.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        {enrollment.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(enrollment.enrolledAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="space-y-6">
+          {/* Add Enrollment Button */}
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium text-gray-900">
+              Enrolled Students ({course.enrollments.length}/{course.maxStudents})
+            </h3>
+            {course.enrollments.length < course.maxStudents && (
+              <button
+                onClick={() => setShowAddEnrollment(!showAddEnrollment)}
+                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                {showAddEnrollment ? "Cancel" : "+ Enroll Student"}
+              </button>
+            )}
+          </div>
+
+          {/* Add Enrollment Form */}
+          {showAddEnrollment && (
+            <form onSubmit={handleAddEnrollment} className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+              <h4 className="font-medium text-gray-900">Manual Enrollment with Payment Details</h4>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Student *</label>
+                  <select
+                    value={enrollmentData.studentId}
+                    onChange={(e) => setEnrollmentData({ ...enrollmentData, studentId: e.target.value })}
+                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900"
+                  >
+                    <option value="">Select a student</option>
+                    {availableStudents.map((student) => (
+                      <option key={student.id} value={student.id}>
+                        {student.name} ({student.email})
+                      </option>
+                    ))}
+                  </select>
+                  {availableStudents.length === 0 && (
+                    <p className="mt-1 text-xs text-gray-500">All students are already enrolled or course is full</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Payment Method</label>
+                  <select
+                    value={enrollmentData.paymentMethod}
+                    onChange={(e) => setEnrollmentData({ ...enrollmentData, paymentMethod: e.target.value })}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900"
+                  >
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cash">Cash</option>
+                    <option value="paypal">PayPal</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Amount Paid (€)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={enrollmentData.amountPaid}
+                    onChange={(e) => setEnrollmentData({ ...enrollmentData, amountPaid: e.target.value })}
+                    placeholder="Course price"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Transaction Reference</label>
+                  <input
+                    type="text"
+                    value={enrollmentData.transactionRef}
+                    onChange={(e) => setEnrollmentData({ ...enrollmentData, transactionRef: e.target.value })}
+                    placeholder="Bank ref, receipt #, etc."
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Payment Date</label>
+                  <input
+                    type="date"
+                    value={enrollmentData.paymentDate}
+                    onChange={(e) => setEnrollmentData({ ...enrollmentData, paymentDate: e.target.value })}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Payer Name</label>
+                  <input
+                    type="text"
+                    value={enrollmentData.payerName}
+                    onChange={(e) => setEnrollmentData({ ...enrollmentData, payerName: e.target.value })}
+                    placeholder="Who made the payment"
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Payment Notes</label>
+                  <textarea
+                    value={enrollmentData.paymentNotes}
+                    onChange={(e) => setEnrollmentData({ ...enrollmentData, paymentNotes: e.target.value })}
+                    rows={2}
+                    placeholder="Additional payment details..."
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddEnrollment(false)}
+                  className="px-3 py-1.5 text-sm text-gray-700 hover:text-gray-900"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={availableStudents.length === 0}
+                  className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Enroll Student
+                </button>
+              </div>
+            </form>
           )}
+
+          {/* Enrollments Table */}
+          <div className="bg-white shadow rounded-lg overflow-hidden">
+            {course.enrollments.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-sm">No enrollments yet.</p>
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Student
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Payment
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Enrolled At
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {course.enrollments.map((enrollment) => (
+                    <tr key={enrollment.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {enrollment.student.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {enrollment.student.email}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          {enrollment.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {enrollment.paymentMethod ? (
+                          <div className="space-y-1">
+                            <div className="font-medium">
+                              {enrollment.amountPaid ? `€${enrollment.amountPaid}` : "N/A"} via {enrollment.paymentMethod}
+                            </div>
+                            {enrollment.transactionRef && (
+                              <div className="text-xs text-gray-500">Ref: {enrollment.transactionRef}</div>
+                            )}
+                            {enrollment.paymentDate && (
+                              <div className="text-xs text-gray-500">
+                                Paid: {new Date(enrollment.paymentDate).toLocaleDateString()}
+                              </div>
+                            )}
+                            {enrollment.payerName && (
+                              <div className="text-xs text-gray-500">By: {enrollment.payerName}</div>
+                            )}
+                            {enrollment.paymentNotes && (
+                              <div className="text-xs text-gray-500 italic">{enrollment.paymentNotes}</div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">No payment info</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       )}
     </div>

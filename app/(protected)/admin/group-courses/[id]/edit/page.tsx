@@ -15,7 +15,7 @@ export default async function EditGroupCoursePage({
 
   const { id } = await params;
 
-  const [course, teachers] = await Promise.all([
+  const [course, teachers, students] = await Promise.all([
     prisma.groupCourse.findUnique({
       where: { id },
       include: {
@@ -62,6 +62,18 @@ export default async function EditGroupCoursePage({
       },
       orderBy: { name: "asc" },
     }),
+    prisma.user.findMany({
+      where: {
+        role: "STUDENT",
+        status: "ACTIVE",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   if (!course) {
@@ -72,12 +84,16 @@ export default async function EditGroupCoursePage({
   const serializedCourse = {
     ...course,
     price: Number(course.price),
+    enrollments: course.enrollments.map((e) => ({
+      ...e,
+      amountPaid: e.amountPaid ? Number(e.amountPaid) : null,
+    })),
   };
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <GroupCourseEditor course={serializedCourse} teachers={teachers} />
+        <GroupCourseEditor course={serializedCourse} teachers={teachers} students={students} />
       </div>
     </main>
   );

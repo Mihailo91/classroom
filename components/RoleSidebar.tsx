@@ -29,12 +29,14 @@ export function RoleSidebar({ role, userName, children }: RoleSidebarProps) {
       { label: "Private Lessons", icon: "🎯", href: "/admin/private-lessons" },
       { label: "Users", icon: "👤", href: "/admin/users" },
       { label: "Analytics", icon: "📈", href: "/admin/analytics" },
+      { label: "Profile", icon: "⚙️", href: "/admin/profile" },
     ],
     teacher: [
       { label: "Dashboard", icon: "📊", href: "/teacher/dashboard" },
       { label: "Group Courses", icon: "👥", href: "/teacher/group-courses" },
       { label: "Private Lessons", icon: "🎯", href: "/teacher/private-lessons" },
       { label: "My Schedule", icon: "📅", href: "/teacher/schedule" },
+      { label: "Profile", icon: "⚙️", href: "/teacher/profile" },
     ],
     student: [
       { label: "Dashboard", icon: "📊", href: "/student/dashboard" },
@@ -43,6 +45,7 @@ export function RoleSidebar({ role, userName, children }: RoleSidebarProps) {
       { label: "Private Lessons", icon: "🎯", href: "/student/private-lessons" },
       { label: "My Learning", icon: "🎓", href: "/student/my-courses" },
       { label: "Cart", icon: "🛒", href: "/student/cart" },
+      { label: "Profile", icon: "⚙️", href: "/student/profile" },
     ],
   };
 
