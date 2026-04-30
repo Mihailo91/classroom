@@ -1,38 +1,34 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { getPackageSummary } from "@/lib/actions/studentPackages";
 
 export default async function StudentDashboard() {
   const session = await auth();
 
-  // Fetch student's stats
   const [
     enrolledVideoCourses,
     enrolledGroupCourses,
     upcomingLessons,
+    packageSummary,
   ] = await Promise.all([
     prisma.studentCourse.count({
       where: { studentId: session?.user.id },
     }),
     prisma.groupEnrollment.count({
-      where: {
-        studentId: session?.user.id,
-        status: "ACTIVE",
-      },
+      where: { studentId: session?.user.id, status: "ACTIVE" },
     }),
     prisma.groupLesson.count({
       where: {
         course: {
           enrollments: {
-            some: {
-              studentId: session?.user.id,
-              status: "ACTIVE",
-            },
+            some: { studentId: session?.user.id, status: "ACTIVE" },
           },
         },
         scheduledAt: { gte: new Date() },
       },
     }),
+    getPackageSummary(session?.user.id),
   ]);
 
   return (
@@ -61,21 +57,30 @@ export default async function StudentDashboard() {
           value={upcomingLessons.toString()}
           icon="📅"
         />
-        <StatCard
-          label="Private Lessons"
-          value="—"
-          icon="🎯"
-          badge="Coming Soon"
-        />
+        <Link href="/student/private-lessons" className="block">
+          <div className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow h-full">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl">🎯</span>
+              {packageSummary.totalRemaining > 0 && (
+                <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded">
+                  {packageSummary.totalRemaining} left
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-500">Private Packages</p>
+            <p className="text-3xl font-bold text-gray-900 mt-1">
+              {packageSummary.totalActive}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">active packages</p>
+          </div>
+        </Link>
       </div>
 
       {/* My Learning */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              My Video Courses
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900">My Video Courses</h3>
             <Link
               href="/student/my-courses"
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
@@ -92,9 +97,7 @@ export default async function StudentDashboard() {
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              My Group Courses
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900">My Group Courses</h3>
             <Link
               href="/student/my-group-courses"
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
@@ -137,44 +140,5 @@ function StatCard({
       <p className="text-sm text-gray-500">{label}</p>
       <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
     </div>
-  );
-}
-
-function ActionCard({
-  href,
-  icon,
-  title,
-  description,
-  action,
-  badge,
-}: {
-  href: string;
-  icon: string;
-  title: string;
-  description: string;
-  action?: string;
-  badge?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow border border-gray-100"
-    >
-      <div className="flex items-start justify-between mb-3">
-        <span className="text-3xl">{icon}</span>
-        {badge && (
-          <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">
-            {badge}
-          </span>
-        )}
-      </div>
-      <h3 className="font-semibold text-gray-900 mb-1">{title}</h3>
-      <p className="text-sm text-gray-500 mb-3">{description}</p>
-      {action && (
-        <span className="text-sm text-blue-600 font-medium">
-          {action} →
-        </span>
-      )}
-    </Link>
   );
 }

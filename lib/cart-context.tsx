@@ -9,7 +9,7 @@ import {
   ReactNode,
 } from "react";
 
-export type CartItemType = "video" | "group";
+export type CartItemType = "video" | "group" | "package";
 
 export type CartItem = {
   id: string; // courseId for both types

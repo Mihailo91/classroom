@@ -19,13 +19,16 @@ model User {
   updatedAt     DateTime        @updatedAt
   
   // Relations
-  createdCourses   Course[]           @relation("CourseCreator")
-  purchasedCourses StudentCourse[]
-  teachingGroupCourses GroupCourse[]  @relation("GroupCourseTeacher")
-  teachingGroupLessons GroupLesson[]  @relation("GroupLessonTeacher")
-  groupEnrollments GroupEnrollment[]
-  cart             Cart?
-  transactions     Transaction[]
+  createdCourses       Course[]           @relation("CourseCreator")
+  purchasedCourses     StudentCourse[]
+  teachingGroupCourses GroupCourse[]      @relation("GroupCourseTeacher")
+  teachingGroupLessons GroupLesson[]      @relation("GroupLessonTeacher")
+  groupEnrollments     GroupEnrollment[]
+  cart                 Cart?
+  transactions         Transaction[]
+  lessonPackages       LessonPackage[]    @relation("LessonPackageTeacher")
+  ownedPackages        StudentPackage[]   @relation("StudentPackageOwner")
+  packageTeacher       StudentPackage[]   @relation("StudentPackageTeacher")
 }
 
 enum Role {
@@ -210,16 +213,18 @@ model Cart {
 }
 
 model CartItem {
-  id            String       @id @default(cuid())
-  cartId        String
-  cart          Cart         @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  itemType      CartItemType
-  teacherId     String?      // For LESSON_PACKAGE
-  packageType   PackageType? // For LESSON_PACKAGE
-  groupCourseId String?      // For GROUP_COURSE
-  courseId      String?      // For VIDEO_COURSE
-  priceSnapshot Decimal      @db.Decimal(10,2)
-  createdAt     DateTime     @default(now())
+  id              String        @id @default(cuid())
+  cartId          String
+  cart            Cart          @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  itemType        CartItemType
+  lessonPackageId String?       // For LESSON_PACKAGE (FK to LessonPackage catalog)
+  lessonPackage   LessonPackage? @relation(fields: [lessonPackageId], references: [id], onDelete: SetNull)
+  teacherId       String?       // Snapshot: teacher at time of add-to-cart
+  packageType     PackageType?  // Snapshot: package type at time of add-to-cart
+  groupCourseId   String?       // For GROUP_COURSE
+  courseId        String?       // For VIDEO_COURSE
+  priceSnapshot   Decimal       @db.Decimal(10,2)
+  createdAt       DateTime      @default(now())
   
   @@index([cartId])
 }
@@ -254,6 +259,8 @@ model Transaction {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  
+  studentPackages StudentPackage[]
 }
 
 enum TransactionStatus {
@@ -292,4 +299,63 @@ enum CouponTarget {
   LESSON_PACKAGE
   VIDEO_COURSE
   GROUP_COURSE
+}
+
+// ─── LESSON PACKAGES (Catalog) ────────────────────────────
+model LessonPackage {
+  id              String        @id @default(cuid())
+  teacherId       String
+  teacher         User          @relation("LessonPackageTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  packageType     PackageType
+  lessonsIncluded Int           // 1, 4, 8, or 12 — snapshot at creation
+  price           Decimal       @db.Decimal(10,2)
+  description     String?       @db.Text
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  cartItems       CartItem[]
+  studentPackages StudentPackage[]
+  
+  @@unique([teacherId, packageType])
+  @@index([teacherId])
+  @@index([isActive])
+}
+
+// ─── STUDENT PACKAGES (Ownership) ────────────────────────
+model StudentPackage {
+  id                    String               @id @default(cuid())
+  studentId             String
+  student               User                 @relation("StudentPackageOwner", fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId             String
+  teacher               User                 @relation("StudentPackageTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  sourceLessonPackageId String?
+  sourceLessonPackage   LessonPackage?       @relation(fields: [sourceLessonPackageId], references: [id], onDelete: SetNull)
+  transactionId         String?
+  transaction           Transaction?         @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  packageType           PackageType
+  lessonsTotal          Int                  // Snapshot: total lessons in package at purchase
+  lessonsUsed           Int                  @default(0)
+  status                StudentPackageStatus @default(ACTIVE)
+  source                PackageSource        @default(PAYPAL)
+  purchasedAt           DateTime             @default(now())
+  expiresAt             DateTime?            // null = no expiry (e.g., SINGLE)
+  
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([status])
+  @@index([transactionId])
+}
+
+enum StudentPackageStatus {
+  ACTIVE
+  EXHAUSTED
+  EXPIRED
+  CANCELLED
+}
+
+enum PackageSource {
+  PAYPAL
+  BANK_TRANSFER
+  MANUAL_GRANT
 }

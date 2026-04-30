@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { capturePayPalOrder } from "@/lib/paypal";
-import { CartItemType } from "@prisma/client";
+import { CartItemType, PackageSource } from "@prisma/client";
+import { getLessonsIncluded, getExpiresAt } from "@/lib/packageUtils";
 
 /**
  * POST /api/cart/capture
@@ -82,29 +83,75 @@ export async function POST(request: NextRequest) {
     await prisma.$transaction(async (tx) => {
       for (const item of cart.items) {
         if (item.itemType === CartItemType.VIDEO_COURSE && item.courseId) {
-          // Grant course access
-          await tx.studentCourse.create({
-            data: {
+          // Grant course access (idempotent via skipDuplicates)
+          await tx.studentCourse.upsert({
+            where: {
+              studentId_courseId: {
+                studentId: session.user.id,
+                courseId: item.courseId,
+              },
+            },
+            create: {
               studentId: session.user.id,
               courseId: item.courseId,
             },
+            update: {},
           });
         } else if (
           item.itemType === CartItemType.GROUP_COURSE &&
           item.groupCourseId
         ) {
-          // Enroll in group course
-          await tx.groupEnrollment.create({
-            data: {
+          // Enroll in group course (idempotent)
+          await tx.groupEnrollment.upsert({
+            where: {
+              studentId_courseId: {
+                studentId: session.user.id,
+                courseId: item.groupCourseId,
+              },
+            },
+            create: {
               studentId: session.user.id,
               courseId: item.groupCourseId,
               paymentMethod: "paypal",
               amountPaid: Number(item.priceSnapshot),
               paymentDate: new Date(),
             },
+            update: {},
           });
+        } else if (
+          item.itemType === CartItemType.LESSON_PACKAGE &&
+          item.lessonPackageId &&
+          item.teacherId &&
+          item.packageType
+        ) {
+          // Create student package (idempotent: skip if this transaction+package already fulfilled)
+          const existing = await tx.studentPackage.findFirst({
+            where: {
+              transactionId: transaction.id,
+              sourceLessonPackageId: item.lessonPackageId,
+            },
+          });
+
+          if (!existing) {
+            const lessonsTotal = getLessonsIncluded(item.packageType);
+            const expiresAt = getExpiresAt(item.packageType);
+
+            await tx.studentPackage.create({
+              data: {
+                studentId: session.user.id,
+                teacherId: item.teacherId,
+                sourceLessonPackageId: item.lessonPackageId,
+                transactionId: transaction.id,
+                packageType: item.packageType,
+                lessonsTotal,
+                lessonsUsed: 0,
+                status: "ACTIVE",
+                source: PackageSource.PAYPAL,
+                expiresAt,
+              },
+            });
+          }
         }
-        // Note: LESSON_PACKAGE fulfillment will be added in Phase 6
       }
 
       // Update transaction status
