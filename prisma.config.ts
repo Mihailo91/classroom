@@ -15,4 +15,7 @@ export default (defineConfig as any)({
   migrate: {
     adapter: () => new PrismaPg({ connectionString }),
   },
+  migrations: {
+    seed: "tsx prisma/seed.ts",
+  },
 });
